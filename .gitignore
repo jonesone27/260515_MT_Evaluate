@@ -3,4 +3,5 @@ __pycache__/
 *.pyc
 .env
 DeepL_Key.key
+Azure_Key.key
 data/target.txt
