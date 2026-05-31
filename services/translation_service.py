@@ -4,6 +4,10 @@ import requests, uuid, json
 from clients.aztr_client import constructed_url, headers
 from clients.deepl_client import deepl_client
 from pathlib import Path
+import logging
+logger = logging.getLogger(__name__)
+
+
 
 def translate_deepl(source_text: bytes, src_lang:str, tgt_lang: str):
     # load source text and retrieve mt
@@ -13,14 +17,14 @@ def translate_deepl(source_text: bytes, src_lang:str, tgt_lang: str):
     # convert MT to list for calculating BLEU
     deepl_mt = mt_result.text.splitlines()
         
-    nonempty = [ln for ln in deepl_mt if ln.strip() != ""]
-    curdate = datetime.now().strftime("%y_%m_%d_%H_%M")
-    DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-    DATA_DIR.mkdir(exist_ok=True)
-    filepath = DATA_DIR / f"DeepL_{curdate}.txt"
-    with open (filepath, "w", encoding="utf-8") as f: 
-    # with open(f"./data/DeepL_{curdate}.txt", "w", encoding="utf-8") as f:
-        f.write("\n".join(nonempty) + ("\n" if nonempty else ""))
+    # nonempty = [ln for ln in deepl_mt if ln.strip() != ""]
+    # curdate = datetime.now().strftime("%y_%m_%d_%H_%M")
+    # DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+    # DATA_DIR.mkdir(exist_ok=True)
+    # filepath = DATA_DIR / f"DeepL_{curdate}.txt"
+    # # with open (filepath, "w", encoding="utf-8") as f: 
+    # # with open(f"./data/DeepL_{curdate}.txt", "w", encoding="utf-8") as f:
+    #     f.write("\n".join(nonempty) + ("\n" if nonempty else ""))
 
     return deepl_mt
 
@@ -45,18 +49,15 @@ def translate_azure(source_text: bytes, src_lang:str, tgt_lang: str):
 
     # returns a list
     response = request.json()
-
+    logger.info("Azure JSON response: %r", response)
     # print translation to console to check
     # print(json.dumps(response, sort_keys=True, ensure_ascii=False, indent=4, separators=(',', ': ')))
     azure_mt = response[0]["translations"][0]["text"].splitlines()
-    for x in azure_mt:
-        print(x)
+    logger.info("Azure response as String, %r", azure_mt)
+    
     
     # export translation to file
-    nonempty = [ln for ln in azure_mt if ln.strip() != ""]
-    curdate = datetime.now().strftime("%y_%m_%d_%H_%M") 
-    with open(f"./data/Azure_{curdate}.txt", "w", encoding="utf-8") as f:
-        f.write("\n".join(nonempty) + ("\n" if nonempty else ""))
-
+    
+    
     return azure_mt
 

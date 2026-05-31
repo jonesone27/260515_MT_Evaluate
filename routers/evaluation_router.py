@@ -4,7 +4,7 @@ from fastapi import (
     HTTPException
 )
 
-from app.models import MTMetrics
+from models.evaluation_model import MTMetrics
 
 from services.evaluation_service import evaluate_mt
 
