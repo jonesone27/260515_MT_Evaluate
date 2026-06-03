@@ -49,6 +49,7 @@ def translate_azure(source_text: bytes, src_lang:str, tgt_lang: str):
 
     # returns a list
     response = request.json()
+    
     logger.info("Azure JSON response: %r", response)
     # print translation to console to check
     # print(json.dumps(response, sort_keys=True, ensure_ascii=False, indent=4, separators=(',', ': ')))

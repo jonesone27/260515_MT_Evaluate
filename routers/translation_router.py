@@ -40,7 +40,7 @@ async def translate(provider: str, src_text: UploadFile, slang:str, tlang: str):
         # create and return translation object based on MTResponse
         logger.info("Returned translation: %s", aztr_response)        
         save_translation(mt_provider=provider, lines=aztr_response)
-          
+                
         return MTResponse(translation=aztr_response)
     
     if provider == "deepl":
