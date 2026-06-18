@@ -13,18 +13,18 @@ def translate_deepl(source_text: bytes, src_lang:str, tgt_lang: str):
     # load source text and retrieve mt
     source_text = source_text.decode("utf-8")
     
+    # mt_result is an object incl. the translation returned by DeepL
     mt_result = deepl_client.translate_text(source_text, target_lang=tgt_lang)
     # convert MT to list for calculating BLEU
+
     deepl_mt = mt_result.text.splitlines()
+    
+    logger.info("DeepL response: %r", mt_result)
+    logger.info(f"DeepL response type: {type(mt_result)}")
+    logger.info(f"DeepL response dir: {dir(mt_result)}")
+    ## access the translation text from the returned DeepL object
         
-    # nonempty = [ln for ln in deepl_mt if ln.strip() != ""]
-    # curdate = datetime.now().strftime("%y_%m_%d_%H_%M")
-    # DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-    # DATA_DIR.mkdir(exist_ok=True)
-    # filepath = DATA_DIR / f"DeepL_{curdate}.txt"
-    # # with open (filepath, "w", encoding="utf-8") as f: 
-    # # with open(f"./data/DeepL_{curdate}.txt", "w", encoding="utf-8") as f:
-    #     f.write("\n".join(nonempty) + ("\n" if nonempty else ""))
+
 
     return deepl_mt
 
