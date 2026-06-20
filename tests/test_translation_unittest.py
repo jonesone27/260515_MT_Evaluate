@@ -11,3 +11,4 @@ def test_de_en():
 def test_azure_return_string():
     result = translate_azure(source_text=b"Hallo Welt!", src_lang="de", tgt_lang="en")
     assert isinstance(result[0], str)
+

@@ -1,8 +1,10 @@
 import unittest
 from unittest.mock import patch, Mock
 import pytest
+import requests
 
 from services.translation_service import translate_azure, translate_deepl
+
 
 # Purpose: Testing call to translation tool without API access to the actual (online) tool 
 # See https://www.youtube.com/watch?v=-F6wVOlsEAM
@@ -46,6 +48,24 @@ class TestUserAzure(unittest.TestCase):
         assert kwargs["params"]["to"] == ["en"]
         assert kwargs["json"][0]["text"] == "Ich erkläre die Sitzungsperiode des Europäischen Parlaments für wiederaufgenommen"
 
+    @patch('services.translation_service.requests.post')
+    def test_translate_azure_exception(self, mock_post):
+        
+        # 1. define the mock exception
+        mock_post.side_effect = requests.exceptions.ConnectionError("Azure Translator not available")
+
+
+        with pytest.raises(requests.exceptions.ConnectionError) as excinfo:
+            translate_azure(
+                source_text=b"Guten Tag", 
+                src_lang="de", 
+                tgt_lang="en"
+                )
+
+        print(f"Azure mock expection: {excinfo}")
+        print(f"excinfo.value type: {type(excinfo.value)}") 
+        assert str(excinfo.value) == "Azure Translator not available"
+        assert isinstance(excinfo.value, requests.exceptions.ConnectionError)
 
 
 # DEEPL
@@ -94,13 +114,16 @@ class TestUserDeepL(unittest.TestCase):
 
         mock_translate.side_effect = Exception("Deepl unavailable")
 
-        # See https://docs.pytest.org/en/stable/how-to/assert.html
         with pytest.raises(Exception) as excinfo:
             translate_deepl(
-                source_text="Guten Tag", 
+                source_text="Guten Tag".encode("utf-8"), 
                 src_lang="de", 
                 tgt_lang="en-gb"
                 )
             
+        
+        # See https://docs.pytest.org/en/stable/how-to/assert.html
+        # Regarding the "value" attribute, see also: https://docs.pytest.org/en/stable/reference/reference.html#pytest.ExceptionInfo
         print(f"DeepL mock exception: {excinfo}")
+        assert str(excinfo.value) == "Deepl unavailable"
 

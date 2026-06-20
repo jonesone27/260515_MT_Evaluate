@@ -8,28 +8,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-
-def translate_deepl(source_text: bytes, src_lang:str, tgt_lang: str):
-    # load source text and retrieve mt
-    source_text = source_text.decode("utf-8")
-    
-    # mt_result is an object incl. the translation returned by DeepL
-    mt_result = deepl_client.translate_text(source_text, target_lang=tgt_lang)
-    # convert MT to list for calculating BLEU
-
-    deepl_mt = mt_result.text.splitlines()
-    
-    logger.info("DeepL response: %r", mt_result)
-    logger.info(f"DeepL response type: {type(mt_result)}")
-    logger.info(f"DeepL response dir: {dir(mt_result)}")
-    ## access the translation text from the returned DeepL object
-        
-
-
-    return deepl_mt
-
-
-
 # def translate_azure(source_text: Annotated[bytes, File()], slang:str, tlang: str, aztr_ref_text: Annotated[bytes | None, File()] = None):
 def translate_azure(source_text: bytes, src_lang:str, tgt_lang: str):
 
@@ -45,20 +23,51 @@ def translate_azure(source_text: bytes, src_lang:str, tgt_lang: str):
         'text': source_text
     }]
 
-    request = requests.post(constructed_url, params=params, headers=headers, json=body)
-
+    response = requests.post(constructed_url, params=params, headers=headers, json=body)
+    
+    translation = response.json()
+    # print(f"response: {response}")
+    # print(f"response type: {type(response)}")
     # returns a list
-    response = request.json()
+    # print(f"translation: {translation}")
+    # response_content =response.text
+    # print(f"response_content: {response_content}")
     
-    logger.info("Azure JSON response: %r", response)
+    logger.info("Azure JSON response: %r", translation)
     # print translation to console to check
-    # print(json.dumps(response, sort_keys=True, ensure_ascii=False, indent=4, separators=(',', ': ')))
-    azure_mt = response[0]["translations"][0]["text"].splitlines()
+    # print(json.dumps(translation, sort_keys=True, ensure_ascii=False, indent=4, separators=(',', ': ')))
+    azure_mt = translation[0]["translations"][0]["text"].splitlines()
     logger.info("Azure response as String, %r", azure_mt)
-    
-    
-    # export translation to file
-    
-    
+        
+
     return azure_mt
+
+
+def translate_deepl(source_text: bytes, src_lang:str, tgt_lang: str):
+    try:
+
+        # load source text and retrieve mt
+
+        source_text = source_text.decode("utf-8")
+        
+        # mt_result is an object incl. the translation returned by DeepL
+        mt_result = deepl_client.translate_text(source_text, target_lang=tgt_lang)
+        # convert MT to list for calculating BLEU
+
+        deepl_mt = mt_result.text.splitlines()
+        
+        logger.info("DeepL response: %r", mt_result)
+        logger.info(f"DeepL response type: {type(mt_result)}")
+        logger.info(f"DeepL response dir: {dir(mt_result)}")
+    ## access the translation text from the returned DeepL object
+        
+        return deepl_mt
+
+    except Exception as e:
+        logger.error("DeepL translation failed: %s", e)
+        raise
+
+
+    
+    
 
