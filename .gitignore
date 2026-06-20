@@ -5,3 +5,6 @@ __pycache__/
 DeepL_Key.key
 Azure_Key.key
 data/target.txt
+data/azure_*.txt
+data/deepl_*.txt
+runazuretranslator.py
