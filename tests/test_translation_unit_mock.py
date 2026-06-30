@@ -1,15 +1,42 @@
-import unittest
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, AsyncMock
 import pytest
 import requests
+import deepl
+from fastapi import HTTPException
+
+from azure.core.exceptions import ServiceRequestTimeoutError, ServiceRequestError
 
 from services.translation_service import translate_azure, translate_deepl
+from routers.translation_router import translate
+
+
+
+
+class TestProviderSelection:
+    #  see https://github.com/pytest-dev/pytest-asyncio
+    @pytest.mark.asyncio
+    async def test_select_unavailable_provider(self):
+
+        mock_file = AsyncMock()
+        mock_file.read.return_value = b"Hallo Welt"
+        
+        with pytest.raises(HTTPException) as excinfo:
+            await translate(provider="GoogleTranslator", src_text=mock_file, slang="de", tlang="en")
+
+        mock_file.read.assert_called_once()
+
+        assert excinfo.value.status_code == 400
+        assert excinfo.value.detail == "Provider unknown!"
+
+
 
 
 # Purpose: Testing call to translation tool without API access to the actual (online) tool 
 # See https://www.youtube.com/watch?v=-F6wVOlsEAM
 
-class TestUserAzure(unittest.TestCase):
+# only unittest requires the use of classes, see https://docs.python.org/3/library/unittest.html#basic-example
+# use of classes is optional for pytest, see https://docs.pytest.org/en/stable/getting-started.html#group-multiple-tests-in-a-class
+class TestAzure:
     # patch temporarily replaces requests.post from translate_azure() with a Mock object.
     #  i.e. For the duration of this test,  requests.post() does not make a network request, but calls a fake object instead.
     #  call requests.post() from services.translation_service
@@ -48,6 +75,7 @@ class TestUserAzure(unittest.TestCase):
         assert kwargs["params"]["to"] == ["en"]
         assert kwargs["json"][0]["text"] == "Ich erkläre die Sitzungsperiode des Europäischen Parlaments für wiederaufgenommen"
 
+    
     @patch('services.translation_service.requests.post')
     def test_translate_azure_exception(self, mock_post):
         
@@ -68,8 +96,45 @@ class TestUserAzure(unittest.TestCase):
         assert isinstance(excinfo.value, requests.exceptions.ConnectionError)
 
 
+    # See https://azuresdkdocs.z19.web.core.windows.net/python/azure-core/latest/azure.core.html#azure.core.exceptions.ServiceRequestError
+    #  See https://github.com/Azure/azure-sdk-tools/blob/f4491aed714047bc5d35ca4ee2aefccfb90ce98f/packages/python-packages/apiview-stub-generator/apistub/_vendor/core/exceptions.py#L334
+    @patch('services.translation_service.requests.post')
+    def test_azure_timeout(self, mock_post):
+        
+        mock_post.side_effect = ServiceRequestTimeoutError("Timeout - server does not respond")
+
+        with pytest.raises(ServiceRequestTimeoutError) as excinfo:
+            translate_azure(
+                source_text=b"Guten Tag", 
+                src_lang="de", 
+                tgt_lang="en"
+                )
+        mock_post.assert_called_once()
+
+        # string required as value is an object attribute
+        assert str(excinfo.value) == "Timeout - server does not respond"
+
+        #  error code 408002
+
+    @patch('services.translation_service.requests.post')
+    def test_azure_connect_exception(self, mock_post):
+
+        mock_post.side_effect = ServiceRequestError("Connection could not be established")
+
+        with pytest.raises(ServiceRequestError) as excinfo:
+            translate_azure(
+                source_text=b"Guten Tag", 
+                src_lang="de", 
+                tgt_lang="en"
+                )
+        
+        mock_post.assert_called_once()
+
+        assert str(excinfo.value) == "Connection could not be established"
+
+
 # DEEPL
-class TestUserDeepL(unittest.TestCase):
+class TestDeepL:
     @patch('services.translation_service.deepl_client.translate_text')
     def test_translate_deepl_success(self, mock_translate):
 
@@ -125,5 +190,49 @@ class TestUserDeepL(unittest.TestCase):
         # See https://docs.pytest.org/en/stable/how-to/assert.html
         # Regarding the "value" attribute, see also: https://docs.pytest.org/en/stable/reference/reference.html#pytest.ExceptionInfo
         print(f"DeepL mock exception: {excinfo}")
+        
+        mock_translate.assert_called_once()
         assert str(excinfo.value) == "Deepl unavailable"
 
+
+    @patch('services.translation_service.deepl_client.translate_text')
+    def test_deepl_timeout(self, mock_translate):
+        
+        mock_translate.side_effect = requests.exceptions.Timeout("Timeout - server does not respond")
+
+
+        with pytest.raises(requests.exceptions.Timeout) as excinfo:
+    
+            translate_deepl(
+                source_text="Guten Tag".encode("utf-8"), 
+                src_lang="de", 
+                tgt_lang="en-gb"
+                )
+        
+        mock_translate.assert_called_once()
+
+        assert str(excinfo.value) == "Timeout - server does not respond"
+
+
+    # see https://github.com/DeepLcom/deepl-python/blob/main/deepl/exceptions.py
+    @patch('services.translation_service.deepl_client.translate_text')
+    def test_deepl_connect_exception(self, mock_translate):
+
+        mock_translate.side_effect = deepl.exceptions.ConnectionException(
+            message="Connection to the DeepL API failed", 
+            should_retry=True
+
+        )
+
+        with pytest.raises(deepl.exceptions.ConnectionException) as excinfo:
+
+            translate_deepl(
+                source_text="Guten Tag".encode("utf-8"), 
+                src_lang="de", 
+                tgt_lang="en-gb"
+                )
+        
+        mock_translate.assert_called_once()
+
+        assert str(excinfo.value) == "Connection to the DeepL API failed"
+            

@@ -1,0 +1,11 @@
+.fastapienv/
+.fastapi_linux/
+.venv/
+.git/
+.pytest_cache/
+__pycache__/
+*.pyc
+*.log
+*.key
+*.env
+*.git

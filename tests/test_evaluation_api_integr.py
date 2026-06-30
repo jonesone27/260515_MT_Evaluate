@@ -1,15 +1,22 @@
 from fastapi.testclient import TestClient
+import pytest
 from app.main import app
+from pathlib import Path
 
+PROJECT_ROOT = Path(__file__).parent.parent
+
+sample_hyp = PROJECT_ROOT / "data" / "Sample_europarl-v7de_100_EN_HYP_1.txt"
+
+sample_ref = PROJECT_ROOT / "data" / "europarl-v7de_100_EN_REF_1.txt"
 eval_client = TestClient(app)
 
 def test_evaluate_bleu():
-    with open ("J:/1_NLP_Data_Engineer/260515_MT_Evaluate/data/azure_26_05_31_19_46.txt", "rb") as hyp, open ("J:/1_NLP_Data_Engineer/260515_MT_Evaluate/data/europarl-v7de_100_EN_REF_1.txt", "rb") as ref:
+    with open (sample_hyp, "rb") as hyp, open (sample_ref, "rb") as ref:
         response = eval_client.post(
             "/evaluate/bleu",
             files={
-                "hypothesis": ("azure_26_05_31_19_46.txt", hyp, "text/plain"),
-                "reference": ("europarl-v7de_100_EN_REF_1.txt", ref, "text/plain")
+                "hypothesis": (sample_hyp.name, hyp, "text/plain"),
+                "reference": (sample_ref.name, ref, "text/plain")
 
             }
         )
@@ -19,7 +26,7 @@ def test_evaluate_bleu():
     print (f"JSON response: {data}")
 
     assert response.status_code==200  
-    assert 0 < data['bleuscore'] < 100
+    assert data['bleuscore'] == pytest.approx(100)
     assert "bleuscore" in data
     assert "precisions" in data
     assert "brevity_penalty" in data
@@ -36,12 +43,12 @@ def test_evaluate_bleu():
     
 
 def test_evaluate_chrf():
-    with open ("J:/1_NLP_Data_Engineer/260515_MT_Evaluate/data/azure_26_05_31_19_46.txt", "rb") as hyp, open ("J:/1_NLP_Data_Engineer/260515_MT_Evaluate/data/europarl-v7de_100_EN_REF_1.txt", "rb") as ref:
+    with open (sample_hyp, "rb") as hyp, open (sample_ref, "rb") as ref:
         response_chrf = eval_client.post(
             "/evaluate/chrf",
             files={
-                "hypothesis": ("azure_26_05_31_19_46.txt", hyp, "text/plain"),
-                "reference": ("europarl-v7de_100_EN_REF_1.txt", ref, "text/plain")
+                "hypothesis": (sample_hyp.name, hyp, "text/plain"),
+                "reference": (sample_ref.name, ref, "text/plain")
 
             }
         )
@@ -53,12 +60,12 @@ def test_evaluate_chrf():
     
 
 def test_evaluate_ter():
-    with open ("J:/1_NLP_Data_Engineer/260515_MT_Evaluate/data/azure_26_05_31_19_46.txt", "rb") as hyp, open ("J:/1_NLP_Data_Engineer/260515_MT_Evaluate/data/europarl-v7de_100_EN_REF_1.txt", "rb") as ref:
+    with open (sample_hyp, "rb") as hyp, open (sample_ref, "rb") as ref:
         response_ter = eval_client.post(
             "/evaluate/ter",
             files={
-                "hypothesis": ("azure_26_05_31_19_46.txt", hyp, "text/plain"),
-                "reference": ("europarl-v7de_100_EN_REF_1.txt", ref, "text/plain")
+                "hypothesis": (sample_hyp.name, hyp, "text/plain"),
+                "reference": (sample_ref.name, ref, "text/plain")
 
             }
         )

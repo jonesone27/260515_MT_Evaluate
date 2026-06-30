@@ -29,7 +29,7 @@ async def translate(provider: str, src_text: UploadFile, slang:str, tlang: str):
 
     # https://docs.python.org/3/library/logging.html#logging.Logger.info
     logger.info(
-        "MT info: %s -> %s via %s",
+        "MT request for %s into %s submitted to %s",
         slang,
         tlang,
         provider
