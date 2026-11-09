@@ -1,0 +1,22 @@
+groups:
+ - name: mt_evaluate
+   interval: 15s
+   rules:
+
+
+
+   # Succesful evaluation requests
+   - record: mt_evaluate:successful_requests:total
+     expr: http_requests_total{handler="/evaluate/",method="POST",status="2xx"}
+
+   # Successful evaluation requests per hour
+   - record: mt_evaluate:successful_requests:increase1h
+     expr: increase(http_requests_total{handler="/evaluate/",method="POST",status="2xx"}[1h])
+
+   # Total response size
+   - record: mt_evaluate:response_size_bytes:total
+     expr: http_response_size_bytes_sum{handler="/evaluate/"}
+
+   # Number of responses
+   - record: mt_evaluate:responses:total
+     expr: http_response_size_bytes_count{handler="/evaluate/"}

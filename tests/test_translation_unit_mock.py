@@ -30,6 +30,7 @@ class TestProviderSelection:
 
 
 
+# See https://docs.python.org/3/library/unittest.mock.html#the-patchers!!
 
 # Purpose: Testing call to translation tool without API access to the actual (online) tool 
 # See https://www.youtube.com/watch?v=-F6wVOlsEAM
@@ -40,6 +41,7 @@ class TestAzure:
     # patch temporarily replaces requests.post from translate_azure() with a Mock object.
     #  i.e. For the duration of this test,  requests.post() does not make a network request, but calls a fake object instead.
     #  call requests.post() from services.translation_service
+    
     @patch('services.translation_service.requests.post')
     # Because of @patch, Python automatically passes the created mock, i.e. mock_post is the fake version of requests.post
     def test_translate_azure(self, mock_post):
@@ -65,8 +67,8 @@ class TestAzure:
 
         # Inspect call arguments
         args, kwargs = mock_post.call_args
-        print(f"args: {args}")
-        print(f"kwargs: {kwargs}")
+        
+        
 
         
         assert translation == ['I declare resumed the session of the European Parliament.']
@@ -90,8 +92,8 @@ class TestAzure:
                 tgt_lang="en"
                 )
 
-        print(f"Azure mock expection: {excinfo}")
-        print(f"excinfo.value type: {type(excinfo.value)}") 
+        
+        
         assert str(excinfo.value) == "Azure Translator not available"
         assert isinstance(excinfo.value, requests.exceptions.ConnectionError)
 
@@ -163,8 +165,8 @@ class TestDeepL:
         assert deepl_mt == ['I declare resumed the session of the European Parliament.']
 
         args, kwargs = mock_translate.call_args
-        print(f"DeepL mock args: {args}")
-        print(f"DeepL mock kwargs: {kwargs}")
+        
+        
 
         assert args[0] == "Ich erkläre die Sitzungsperiode des Europäischen Parlaments für wiederaufgenommen"
 
@@ -189,7 +191,7 @@ class TestDeepL:
         
         # See https://docs.pytest.org/en/stable/how-to/assert.html
         # Regarding the "value" attribute, see also: https://docs.pytest.org/en/stable/reference/reference.html#pytest.ExceptionInfo
-        print(f"DeepL mock exception: {excinfo}")
+        
         
         mock_translate.assert_called_once()
         assert str(excinfo.value) == "Deepl unavailable"

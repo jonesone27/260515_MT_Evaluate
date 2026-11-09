@@ -8,4 +8,6 @@ __pycache__/
 *.log
 *.key
 *.env
+.env
 *.git
+Architecture_decision_record_adr.md

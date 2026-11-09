@@ -9,6 +9,10 @@ from services.translation_service import (
     translate_azure
 )
 from services.file_service import save_translation
+
+from monitoring.metrics import translation_requests
+
+
 # https://docs.python.org/3/library/logging.html#logging.getLogger
 # __name__ = module’s name
 import logging
@@ -24,6 +28,9 @@ translate_router= APIRouter(
 # Translate function
 @translate_router.post("/{provider}", response_model=MTResponse)
 async def translate(provider: str, src_text: UploadFile, slang:str, tlang: str):
+    # User-defined Prometheus metric to count MT requests
+    
+    
     src_bytes = await src_text.read()
 
 
@@ -36,6 +43,9 @@ async def translate(provider: str, src_text: UploadFile, slang:str, tlang: str):
     )
 
     if provider == "azure":
+        # count requests submitted to azure via the custom Prometheus translation_requests metric
+        translation_requests.labels(provider="azure").inc()
+
         aztr_response = translate_azure(source_text=src_bytes, src_lang=slang, tgt_lang=tlang)
         # create and return translation object based on MTResponse
         logger.info("Returned translation: %s", aztr_response)        
@@ -44,6 +54,9 @@ async def translate(provider: str, src_text: UploadFile, slang:str, tlang: str):
         return MTResponse(translation=aztr_response)
     
     if provider == "deepl":
+        # count requests submitted to azure via the custom Prometheus translation_requests metric
+        translation_requests.labels(provider="deepl").inc()
+        
         deepl_response = translate_deepl(source_text=src_bytes, src_lang=slang, tgt_lang=tlang)
 
         logger.info("Returned translation: %s", deepl_response)
@@ -54,5 +67,9 @@ async def translate(provider: str, src_text: UploadFile, slang:str, tlang: str):
     
     logging.warning("Selected provider is not Azure Translator or DeepL!")
     raise HTTPException(status_code=400, detail="Provider unknown!")
+
+
+    
+        
     
 
